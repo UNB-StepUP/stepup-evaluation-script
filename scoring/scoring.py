@@ -1,26 +1,43 @@
 import numpy as np
+from sklearn.metrics import roc_curve
+from scipy.optimize import brentq
+from scipy.interpolate import interp1d
 
 
-def compute_acc(ground_truth, predictions, threshold):
-  pass
-def compute_fmr(ground_truth, predictions, threshold):
-  pass
-def compute_fnmr(ground_truth, predictions, threshold):
-  pass
-def compute_eer(ground_truth, predictions, threshold):
-  pass
-def compute_bac(ground_truth, predictions, threshold):
-  pass
-def compute_fnmr_fmr1(ground_truth, predictions, threshold):
-  pass
+def compute_ACC(ground_truth,scores,threshold):
+    pred = scores >= threshold
+    return 100*(pred == ground_truth).mean()
+
+def compute_FNMR(ground_truth,scores,threshold):
+    pred = scores >= threshold
+    return 100*np.mean(pred[ground_truth == 1] == 0)
+
+def compute_FMR(ground_truth,scores,threshold):
+    pred = scores >= threshold
+    return 100*np.mean(pred[ground_truth == 0] == 1)
+
+def compute_BACC(ground_truth,scores,threshold):
+    FNMR = compute_FNMR(ground_truth,scores,threshold)
+    FMR = compute_FMR(ground_truth,scores,threshold)
+    return 100 - np.mean((FNMR,FMR))
+
+def compute_EER(ground_truth, scores, threshold = None):
+    FMR, TMR, _ = roc_curve(ground_truth, scores, pos_label=1)
+    EER = 100*brentq(lambda x : 1. - x - interp1d(FMR, TMR)(x), 0., 1.)
+    return EER
+
+def compute_FMR100(ground_truth,scores,threshold = None): # FNMR where FMR = 1%
+    FMR, TMR, _ = roc_curve(ground_truth, scores, pos_label=1)
+    FNMR = 100*(1 - brentq(lambda x : 0.01 - interp1d(TMR,FMR)(x), 0., 1.))
+    return FNMR
 
 outcome_measures = {
-  'acc': compute_acc,
-  'fmr': compute_fmr,
-  'fnmr': compute_fnmr,
-  'eer': compute_eer,
-  'bac': compute_bac,
-  'fnmr@fmr1': compute_fnmr_fmr1,
+  'acc': compute_ACC,
+  'fmr': compute_FMR,
+  'fnmr': compute_FNMR,
+  'eer': compute_EER,
+  'bac': compute_BACC,
+  'fnmr@fmr1': compute_FMR100,
 }
 
 def evaluate_submission(ground_truth, predictions, threshold):
