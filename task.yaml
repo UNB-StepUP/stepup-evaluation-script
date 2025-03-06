@@ -1,0 +1,6 @@
+name: Evaluate Test Submission
+description: Task to evaluate submissions made to "Test" phase of the competition
+scoring_program: 
+  zip: scoring.zip
+reference_data: 
+  zip: reference.zip
